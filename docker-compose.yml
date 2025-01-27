@@ -1,4 +1,3 @@
-version: '3'
 services:
   postgres:
     image: postgres:latest
@@ -8,8 +7,8 @@ services:
       POSTGRES_PASSWORD: administrateur
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - wework-network
 
   app:
     build: .
@@ -22,6 +21,12 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     depends_on:
       - postgres
+    networks:
+      - wework-network
+
+networks:
+  wework-network:
+    driver: bridge
 
 volumes:
   postgres_data:
