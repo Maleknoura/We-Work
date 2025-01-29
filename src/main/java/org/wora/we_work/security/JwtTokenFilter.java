@@ -9,7 +9,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
+
+
 public class JwtTokenFilter extends OncePerRequestFilter {
+
     private final JwtTokenProvider jwtTokenProvider;
 
     public JwtTokenFilter(JwtTokenProvider jwtTokenProvider) {
@@ -17,22 +20,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = resolveToken(request);
 
-        try {
-            if (token != null && jwtTokenProvider.validateToken(token)) {
-                Authentication auth = jwtTokenProvider.getAuthentication(token);
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            }
-        } catch (Exception e) {
-            SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT token");
-            return;
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            Authentication auth = jwtTokenProvider.getAuthentication(token);
+            SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
         filterChain.doFilter(request, response);

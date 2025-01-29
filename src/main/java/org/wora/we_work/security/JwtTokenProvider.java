@@ -1,68 +1,76 @@
 package org.wora.we_work.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.wora.we_work.entities.*;
+import org.wora.we_work.repository.UserRepository;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.List;
 import java.util.stream.Collectors;
 
-    @Component
-    public class JwtTokenProvider {
+@Component
+public class JwtTokenProvider {
 
-        @Value("${jwt.expiration:3600000}")
-        private long validityInMilliseconds;
+    private final CustomUserDetailsService userDetailsService;
+    private final UserRepository userRepository;
+    private final SecretKey secretKey;
+    private static final long EXPIRATION_TIME = 86400000;
 
-        private Key secretKey;
+    public JwtTokenProvider(CustomUserDetailsService userDetailsService, UserRepository userRepository) {
+        this.userDetailsService = userDetailsService;
+        this.userRepository = userRepository;
+        this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    }
 
-        private final CustomUserDetailsService userDetailsService;
+    public String createToken(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        public JwtTokenProvider(CustomUserDetailsService userDetailsService) {
-            this.userDetailsService = userDetailsService;
+        Claims claims = Jwts.claims().setSubject(username);
+        claims.put("userId", user.getId());
+        claims.put("roles", user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList()));
+
+        switch (user) {
+            case Proprietaire proprietaire -> claims.put("userType", "PROPRIETAIRE");
+            case Client client -> claims.put("userType", "CLIENT");
+            case Admin admin -> claims.put("userType", "ADMIN");
+            default -> {}
         }
 
-        @PostConstruct
-        protected void init() {
-            secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + EXPIRATION_TIME);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
-
-        public String createToken(String username, List<String> roles) {
-            Claims claims = Jwts.claims().setSubject(username);
-            claims.put("roles", roles);
-
-            Date now = new Date();
-            Date validity = new Date(now.getTime() + validityInMilliseconds);
-
-            return Jwts.builder()
-                    .setClaims(claims)
-                    .setIssuedAt(now)
-                    .setExpiration(validity)
-                    .signWith(secretKey)
-                    .compact();
-        }
-
-        public boolean validateToken(String token) {
-            try {
-                Jwts.parserBuilder()
-                        .setSigningKey(secretKey)
-                        .build()
-                        .parseClaimsJws(token);
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        }
+    }
 
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder()
@@ -71,15 +79,16 @@ import java.util.stream.Collectors;
                 .parseClaimsJws(token)
                 .getBody();
 
-        String username = claims.getSubject();
-        List<String> roles = claims.get("roles", List.class);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(claims.getSubject());
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-        List<SimpleGrantedAuthority> authorities = roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toList());
-
-        return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
+    public Date getExpirationDate(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
     }
 }

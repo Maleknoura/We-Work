@@ -1,52 +1,50 @@
 package org.wora.we_work.controllers;
 
-
-
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.wora.we_work.dto.AuthRequestDTO;
-import org.wora.we_work.dto.AuthResponseDTO;
-import org.wora.we_work.security.JwtTokenProvider;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.wora.we_work.dto.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.wora.we_work.services.api.UserService;
+import org.wora.we_work.services.api.AuthService;
+
+import javax.management.relation.RoleNotFoundException;
+
+import static org.hibernate.query.sqm.tree.SqmNode.log;
 
 @RestController
-@RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserService userService;
-
-
-
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
-
-        String token = jwtTokenProvider.createToken(
-                authentication.getName(),
-                authentication.getAuthorities().stream()
-                        .map(Object::toString)
-                        .toList()
-        );
-
-        return ResponseEntity.ok(new AuthResponseDTO(token));
-    }
+    private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody AuthRequestDTO request) {
-        return ResponseEntity.ok(userService.registerNewUser(request));
+    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) throws RoleNotFoundException {
+        AuthResponseDTO response = authService.register(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
+        return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/complete-profile/client")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<Void> completeClientProfile(@Valid @RequestBody ClientProfileDTO profileDTO) {
+        authService.completeClientProfile(profileDTO);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/complete-profile/proprietaire")
+    @PreAuthorize("hasRole('PROPRIETAIRE')")
+    public ResponseEntity<Void> completeProprietaireProfile(@Valid @RequestBody ProprietaireProfileDTO profileDTO) {
+        authService.completeProprietaireProfile(profileDTO);
+        return ResponseEntity.ok().build();
     }
 }

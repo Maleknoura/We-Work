@@ -1,21 +1,16 @@
 package org.wora.we_work.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "admins")
-public class Admin {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+@PrimaryKeyJoinColumn(name = "user_id")
+public class Admin extends User {
+    private double amount;
 }

@@ -1,27 +1,19 @@
 package org.wora.we_work.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "clients")
-public class Client {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
+@PrimaryKeyJoinColumn(name = "user_id")
+public class Client extends User {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
     private List<Abonnement> abonnements = new ArrayList<>();
 
@@ -30,4 +22,11 @@ public class Client {
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
     private List<Avis> avis = new ArrayList<>();
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
 }
+
