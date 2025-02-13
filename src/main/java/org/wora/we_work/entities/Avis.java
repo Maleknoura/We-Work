@@ -19,7 +19,7 @@ public class Avis {
 
     @ManyToOne
     @JoinColumn(name = "client_id", nullable = false)
-    private Client client;
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "espace_coworking_id", nullable = false)

@@ -4,17 +4,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 import org.wora.we_work.dto.*;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import org.wora.we_work.services.api.AuthService;
 
 import javax.management.relation.RoleNotFoundException;
 
-import static org.hibernate.query.sqm.tree.SqmNode.log;
 
 @RestController
 @Slf4j
@@ -32,6 +29,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+    @GetMapping("/debug")
+    public ResponseEntity<?> debug(Authentication authentication) {
+        return ResponseEntity.ok(authentication.getAuthorities());
     }
 
     @PostMapping("/complete-profile/client")

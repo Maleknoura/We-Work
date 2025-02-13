@@ -6,11 +6,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.wora.we_work.entities.User;
+import org.wora.we_work.repository.UserRepository;
 import org.wora.we_work.services.api.UserService;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+
 
     @Override
     public User getCurrentUser() {
@@ -20,5 +24,12 @@ public class UserServiceImpl implements UserService {
         }
 
         return (User) authentication.getPrincipal();
+    }
+
+    @Override
+    public Long getUserIdByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé pour l'email: " + email));
     }
 }

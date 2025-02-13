@@ -7,29 +7,35 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "espaces_coworking")
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class EspaceCoworking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "proprietaire_id", nullable = false)
-    private Proprietaire proprietaire;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @OneToMany(mappedBy = "espaceCoworking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Equipement> equipements = new ArrayList<>();
 
     @OneToMany(mappedBy = "espaceCoworking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Avis> avis = new ArrayList<>();
+
+    @OneToMany(mappedBy = "espace", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>();
+
 
     @Column(nullable = false)
     private String nom;
@@ -54,5 +60,12 @@ public class EspaceCoworking {
 
     @UpdateTimestamp
     private LocalDateTime dateModification;
-}
 
+    public BigDecimal getPrixParHeure() {
+        return BigDecimal.valueOf(prixParJour / 24.0);
+    }
+
+    public int getCapaciteMax() {
+        return this.capacite;
+    }
+}

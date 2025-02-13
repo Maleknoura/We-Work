@@ -1,6 +1,7 @@
 package org.wora.we_work.services.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -9,39 +10,38 @@ import org.springframework.transaction.annotation.Transactional;
 import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingRequestDTO;
 import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingResponseDTO;
 import org.wora.we_work.entities.EspaceCoworking;
-import org.wora.we_work.entities.Proprietaire;
 import org.wora.we_work.entities.User;
 import org.wora.we_work.exception.ResourceNotFoundException;
 import org.wora.we_work.mapper.EspaceCoworkingMapper;
 import org.wora.we_work.repository.EspaceCoworkingRepository;
-import org.wora.we_work.repository.ProprietaireRepository;
 import org.wora.we_work.services.api.EspaceCoworkingService;
 import org.wora.we_work.services.api.UserService;
-
-import java.util.List;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
     private final EspaceCoworkingRepository espaceCoworkingRepository;
     private final EspaceCoworkingMapper espaceCoworkingMapper;
-    private final ProprietaireRepository proprietaireRepository;
     private final UserService userService;
+
+    private static final String ROLE_PROPRIETAIRE = "ROLE_PROPRIETAIRE";
 
     @Override
     public EspaceCoworkingResponseDTO create(EspaceCoworkingRequestDTO requestDTO) {
         User currentUser = userService.getCurrentUser();
-        if (!(currentUser instanceof Proprietaire)) {
+        if (!hasProprietaireRole(currentUser)) {
+            log.error("Tentative de création d'espace par un non-propriétaire: {}", currentUser.getEmail());
             throw new AccessDeniedException("Seuls les propriétaires peuvent créer des espaces");
         }
 
-        Proprietaire proprietaire = (Proprietaire) currentUser;
         EspaceCoworking espaceCoworking = espaceCoworkingMapper.toEntity(requestDTO);
-        espaceCoworking.setProprietaire(proprietaire);
+        espaceCoworking.setUser(currentUser);
         espaceCoworking.setActive(true);
 
         validateEspaceCoworking(espaceCoworking);
+        log.info("Création d'un nouvel espace par l'utilisateur: {}", currentUser.getEmail());
 
         return espaceCoworkingMapper.toResponseDTO(espaceCoworkingRepository.save(espaceCoworking));
     }
@@ -52,15 +52,10 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
 
         checkUserAccess(existingEspace);
-
-        existingEspace.setNom(requestDTO.getNom());
-        existingEspace.setAdresse(requestDTO.getAdresse());
-        existingEspace.setDescription(requestDTO.getDescription());
-        existingEspace.setPrixParJour(requestDTO.getPrixParJour());
-        existingEspace.setCapacite(requestDTO.getCapacite());
-
+        updateEspaceFields(existingEspace, requestDTO);
         validateEspaceCoworking(existingEspace);
 
+        log.info("Mise à jour de l'espace id: {} par l'utilisateur: {}", id, userService.getCurrentUser().getEmail());
         return espaceCoworkingMapper.toResponseDTO(espaceCoworkingRepository.save(existingEspace));
     }
 
@@ -70,43 +65,57 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
 
         checkUserAccess(espace);
-
         espace.setActive(false);
         espaceCoworkingRepository.save(espace);
+        log.info("Désactivation de l'espace id: {} par l'utilisateur: {}", id, userService.getCurrentUser().getEmail());
     }
 
     @Override
-    @Transactional(readOnly = true)
     public EspaceCoworkingResponseDTO getById(Long id) {
-        return espaceCoworkingRepository.findByIdAndActiveTrue(id)
-                .map(espaceCoworkingMapper::toResponseDTO)
+        EspaceCoworking espace = espaceCoworkingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
+        return espaceCoworkingMapper.toResponseDTO(espace);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<EspaceCoworkingResponseDTO> getAll(Pageable pageable) {
-        return espaceCoworkingRepository.findAllByActiveTrue(pageable)
+        return espaceCoworkingRepository.findAll(pageable).map(espaceCoworkingMapper::toResponseDTO);
+    }
+
+    @Override
+    public Page<EspaceCoworkingResponseDTO> getAllByProprietaire(Long proprietaireId, Pageable pageable) {
+        return espaceCoworkingRepository.findByUserId(proprietaireId, pageable)
                 .map(espaceCoworkingMapper::toResponseDTO);
     }
 
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<EspaceCoworkingResponseDTO> getAllByProprietaire(Long proprietaireId, Pageable pageable) {
-        return espaceCoworkingRepository.findByProprietaireIdAndActiveTrue(proprietaireId, pageable)
-                .map(espaceCoworkingMapper::toResponseDTO);
+    private void updateEspaceFields(EspaceCoworking espace, EspaceCoworkingRequestDTO requestDTO) {
+        espace.setNom(requestDTO.getNom());
+        espace.setAdresse(requestDTO.getAdresse());
+        espace.setDescription(requestDTO.getDescription());
+        espace.setPrixParJour(requestDTO.getPrixParJour());
+        espace.setCapacite(requestDTO.getCapacite());
     }
 
     private void checkUserAccess(EspaceCoworking espace) {
         User currentUser = userService.getCurrentUser();
-        boolean isAdmin = currentUser.getRoles().stream()
-                .anyMatch(role -> "ADMIN".equals(role.getName()));
-        boolean isOwner = espace.getProprietaire().getId().equals(currentUser.getId());
+        boolean isAdmin = hasAdminRole(currentUser);
+        boolean isOwner = espace.getUser().getId().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
+            log.warn("Tentative d'accès non autorisé à l'espace id: {} par l'utilisateur: {}",
+                    espace.getId(), currentUser.getEmail());
             throw new AccessDeniedException("Vous n'avez pas les droits pour modifier cet espace");
         }
+    }
+
+    private boolean hasProprietaireRole(User user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> ROLE_PROPRIETAIRE.equals(role.getName()));
+    }
+
+    private boolean hasAdminRole(User user) {
+        return user.getRoles().stream()
+                .anyMatch(role -> "ROLE_ADMIN".equals(role.getName()));
     }
 
     private void validateEspaceCoworking(EspaceCoworking espace) {
@@ -118,4 +127,3 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
         }
     }
 }
-

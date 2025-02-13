@@ -14,7 +14,6 @@ public interface EspaceCoworkingMapper {
     EspaceCoworkingResponseDTO toResponseDTO(EspaceCoworking espaceCoworking);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "proprietaire", ignore = true)
     @Mapping(target = "active", constant = "true")
     EspaceCoworking toEntity(EspaceCoworkingRequestDTO requestDTO);
 

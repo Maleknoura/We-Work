@@ -18,8 +18,8 @@ public class Abonnement {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "client_id", nullable = false)
-    private Client client;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private LocalDate dateDebut;
     private LocalDate dateFin;

@@ -3,6 +3,7 @@ package org.wora.we_work.dto.espaceCoworking;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.wora.we_work.dto.UserDTO;
 
 import java.time.LocalDateTime;
 
@@ -19,8 +20,8 @@ public class EspaceCoworkingResponseDTO {
     private boolean active;
     private LocalDateTime dateCreation;
     private LocalDateTime dateModification;
-//    private ProprietaireDTO proprietaire;
-//    private List<EquipementDTO> equipements;
-//    private Double notesMoyenne;
-//    private Integer nombreAvis;
+    private UserDTO user;
+//     private List<EquipementDTO> equipements;
+     private Double notesMoyenne;
+     private Integer nombreAvis;
 }

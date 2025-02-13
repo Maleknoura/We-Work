@@ -2,10 +2,13 @@ package org.wora.we_work.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -13,7 +16,7 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @Inheritance(strategy = InheritanceType.JOINED)
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     protected Long id;
@@ -23,6 +26,8 @@ public class User {
 
     @Column(nullable = false)
     protected String password;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EspaceCoworking> espaces = new ArrayList<>();
 
     @Column(unique = true, nullable = false)
     protected String email;
@@ -32,6 +37,10 @@ public class User {
 
     @Column(name = "created_at", updatable = false)
     protected LocalDateTime createdAt;
+    private String phoneNumber;
+    private String companyName;
+    private String siretNumber;
+    private Double totalAmount;
 
     @Column(name = "updated_at")
     protected LocalDateTime updatedAt;
@@ -61,6 +70,49 @@ public class User {
 
     public void removeRole(Role role) {
         roles.remove(role);
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        Set<GrantedAuthority> authorities = new HashSet<>();
+
+        for (Role role : roles) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+            for (Permissions permission : role.getPermissions()) {
+                authorities.add(new SimpleGrantedAuthority(permission.getName()));
+            }
+        }
+
+        return authorities;
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+
+    public String getRealUsername() {
+        return this.username;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.enabled;
     }
 
     public boolean hasRole(String roleName) {

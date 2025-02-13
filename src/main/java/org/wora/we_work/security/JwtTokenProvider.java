@@ -16,6 +16,7 @@ import org.wora.we_work.repository.UserRepository;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -32,22 +33,18 @@ public class JwtTokenProvider {
         this.secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     }
 
-    public String createToken(String username) {
-        User user = userRepository.findByUsername(username)
+    public String createToken(String email) {
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Claims claims = Jwts.claims().setSubject(username);
+        Claims claims = Jwts.claims().setSubject(email);
         claims.put("userId", user.getId());
         claims.put("roles", user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toList()));
 
-        switch (user) {
-            case Proprietaire proprietaire -> claims.put("userType", "PROPRIETAIRE");
-            case Client client -> claims.put("userType", "CLIENT");
-            case Admin admin -> claims.put("userType", "ADMIN");
-            default -> {}
-        }
+        String userType = determineUserType(user.getRoles());
+        claims.put("userType", userType);
 
         Date now = new Date();
         Date validity = new Date(now.getTime() + EXPIRATION_TIME);
@@ -58,6 +55,17 @@ public class JwtTokenProvider {
                 .setExpiration(validity)
                 .signWith(secretKey)
                 .compact();
+    }
+
+    private String determineUserType(Set<Role> roles) {
+        if (roles.stream().anyMatch(role -> "ROLE_ADMIN".equals(role.getName()))) {
+            return "ADMIN";
+        } else if (roles.stream().anyMatch(role -> "ROLE_PROPRIETAIRE".equals(role.getName()))) {
+            return "PROPRIETAIRE";
+        } else if (roles.stream().anyMatch(role -> "ROLE_CLIENT".equals(role.getName()))) {
+            return "CLIENT";
+        }
+        return "USER";
     }
 
     public boolean validateToken(String token) {

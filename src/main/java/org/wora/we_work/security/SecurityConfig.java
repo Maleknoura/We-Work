@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,6 +47,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/auth/register", "/auth/login").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/espaces/**").hasAuthority("ESPACE_CREATE")
+                        .requestMatchers(HttpMethod.PUT, "/api/espaces/**").hasAuthority("ESPACE_UPDATE")
+                        .requestMatchers(HttpMethod.DELETE, "/api/espaces/**").hasAuthority("ESPACE_DELETE")
+                        .requestMatchers(HttpMethod.GET, "/api/espaces/**").hasAuthority("ESPACE_READ")
+                        .requestMatchers(HttpMethod.POST, "/api/equipments/**").hasAuthority("EQUIPEMENT_CREATE")
+                                .requestMatchers(HttpMethod.PUT, "/api/equipments/**").hasAuthority("EQUIPEMENT_UPDATE")
+                                .requestMatchers(HttpMethod.DELETE, "/api/equipments/**").hasAuthority("EQUIPEMENT_DELETE")
+                                .requestMatchers(HttpMethod.GET, "/api/equipments/**").hasAuthority("EQUIPEMENT_READ")
+                        .requestMatchers(HttpMethod.POST, "/api/booking/**").hasAuthority("RESERVATION_CREATE")
+                        .requestMatchers(HttpMethod.PUT, "/api/booking/**").hasAuthority("RESERVATION_UPDATE")
+                        .requestMatchers(HttpMethod.DELETE, "/api/booking/**").hasAuthority("RESERVATION_DELETE")
+                        .requestMatchers(HttpMethod.GET, "/api/booking/**").hasAuthority("RESERVATION_READ")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions
@@ -83,4 +95,13 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+
 }
