@@ -4,8 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.wora.we_work.dto.UserDTO;
+import org.wora.we_work.dto.equipement.EquipementResponseDTO;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,7 +23,7 @@ public class EspaceCoworkingResponseDTO {
     private LocalDateTime dateCreation;
     private LocalDateTime dateModification;
     private UserDTO user;
-//     private List<EquipementDTO> equipements;
+     private List<EquipementResponseDTO> equipements;
      private Double notesMoyenne;
      private Integer nombreAvis;
 }

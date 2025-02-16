@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.wora.we_work.dto.reservation.ReservationRequest;
 import org.wora.we_work.dto.reservation.ReservationResponse;
+import org.wora.we_work.entities.User;
 import org.wora.we_work.services.api.ReservationService;
 import org.wora.we_work.services.api.UserService;
 
@@ -25,10 +26,9 @@ public class ReservationController {
     @PreAuthorize("hasAuthority('RESERVATION_CREATE')")
     public ResponseEntity<ReservationResponse> creerReservation(
             @RequestBody @Valid ReservationRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
+            @AuthenticationPrincipal User user
     ) {
-        Long utilisateurId = Long.parseLong(userDetails.getUsername());
-        return ResponseEntity.ok(reservationService.creerReservation(request, utilisateurId));
+        return ResponseEntity.ok(reservationService.creerReservation(request, user.getId()));
     }
 
     @GetMapping("/{id}")

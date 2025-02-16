@@ -4,13 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.wora.we_work.dto.AbonnementDTO;
-import org.wora.we_work.dto.PaiementDTO;
 import org.wora.we_work.dto.UserDTO;
 import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingDTO;
+import org.wora.we_work.dto.paiement.PaiementDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor

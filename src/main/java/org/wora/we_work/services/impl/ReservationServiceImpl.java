@@ -113,7 +113,8 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalStateException("Impossible d'annuler une réservation moins de 24h avant");
         }
 
-        reservation.setStatut("ANNULEE");
-        reservationRepository.save(reservation);
+        paiementRepository.deleteByReservation(reservation);
+
+        reservationRepository.delete(reservation);
     }
 }

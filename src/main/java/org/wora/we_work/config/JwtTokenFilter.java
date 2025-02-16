@@ -1,4 +1,4 @@
-package org.wora.we_work.security;
+package org.wora.we_work.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

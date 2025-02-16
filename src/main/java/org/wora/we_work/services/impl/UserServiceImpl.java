@@ -28,8 +28,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Long getUserIdByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .map(User::getId)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé pour l'email: " + email));
+        return user.getId();
     }
 }

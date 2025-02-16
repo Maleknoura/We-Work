@@ -19,7 +19,7 @@ import org.wora.we_work.exception.EmailAlreadyExistsException;
 import org.wora.we_work.exception.UsernameAlreadyExistsException;
 import org.wora.we_work.repository.RoleRepository;
 import org.wora.we_work.repository.UserRepository;
-import org.wora.we_work.security.JwtTokenProvider;
+import org.wora.we_work.config.JwtTokenProvider;
 import org.wora.we_work.services.api.AuthService;
 import org.wora.we_work.services.api.UserService;
 
