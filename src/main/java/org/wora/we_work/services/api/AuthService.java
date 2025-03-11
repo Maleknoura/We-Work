@@ -10,8 +10,5 @@ public interface AuthService {
     AuthResponseDTO register(RegisterRequestDTO request) throws RoleNotFoundException;
     AuthResponseDTO login(LoginRequestDTO request);
 
-    void completeClientProfile(ClientProfileDTO profileDTO);
-
-    void completeProprietaireProfile(ProprietaireProfileDTO profileDTO);
 }
 

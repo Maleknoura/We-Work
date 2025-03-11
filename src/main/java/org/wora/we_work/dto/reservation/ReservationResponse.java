@@ -11,18 +11,13 @@ import org.wora.we_work.dto.paiement.PaiementDTO;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ReservationResponse {
-    private Long id;
-    private UserDTO user;
-    private EspaceCoworkingDTO espaceCoworking;
-    private AbonnementDTO abonnement;
-    private LocalDateTime dateDebut;
-    private LocalDateTime dateFin;
-    private String statut;
-    private BigDecimal prixTotal;
-    private Integer nombrePersonnes;
-    private PaiementDTO paiement;
-}
+
+public record ReservationResponse(
+        String userName,
+        String espaceNom,
+        LocalDateTime dateDebut,
+        LocalDateTime dateFin,
+        BigDecimal prixTotal,
+        String statut,
+        Integer nombrePersonnes
+) {}

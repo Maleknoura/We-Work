@@ -1,5 +1,6 @@
 package org.wora.we_work.dto.equipement;
 
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,24 +8,28 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class EquipementRequestDTO {
-    @NotBlank(message = "Le nom est obligatoire")
-    private String nom;
+import java.math.BigDecimal;
 
-    @NotBlank(message = "La description est obligatoire")
-    private String description;
 
-    @NotNull(message = "La quantité est obligatoire")
-    @Min(value = 0, message = "La quantité doit être positive")
-    private Integer quantite;
+public record EquipementRequestDTO(
+        @NotBlank(message = "Le nom est obligatoire")
+        String nom,
 
-    @NotNull(message = "L'ID de l'espace de coworking est obligatoire")
-    private Long espaceCoworkingId;
-}
+        @NotBlank(message = "La description est obligatoire")
+        String description,
 
+        @NotNull(message = "La quantité est obligatoire")
+        @Min(value = 0, message = "La quantité doit être positive")
+        Integer quantite,
+
+        @NotNull(message = "Le prix est obligatoire")
+        @DecimalMin(value = "0.0", inclusive = true, message = "Le prix doit être positif")
+        BigDecimal prix,
+
+        @NotNull(message = "L'ID de l'espace de coworking est obligatoire")
+        Long espaceCoworkingId
+
+) {}
 
 
 

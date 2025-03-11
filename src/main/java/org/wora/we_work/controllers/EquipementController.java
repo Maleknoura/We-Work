@@ -8,18 +8,29 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.wora.we_work.dto.equipement.EquipementRequestDTO;
 import org.wora.we_work.dto.equipement.EquipementResponseDTO;
+import org.wora.we_work.entities.User;
 import org.wora.we_work.services.api.EquipementService;
+import org.wora.we_work.services.api.UserService;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/equipments")
 @RequiredArgsConstructor
 @Slf4j
+@RequestMapping("/api/equipments")
 public class EquipementController {
     private final EquipementService equipementService;
+    private final UserService userService;
 
+    @GetMapping
+    public ResponseEntity<Page<EquipementResponseDTO>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(equipementService.getAll(pageable));
+    }
     @PostMapping
     @PreAuthorize("hasAuthority('EQUIPEMENT_CREATE')")
     public ResponseEntity<EquipementResponseDTO> create(@Valid @RequestBody EquipementRequestDTO requestDTO) {
@@ -42,23 +53,32 @@ public class EquipementController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('EQUIPEMENT_READ')")
     public ResponseEntity<EquipementResponseDTO> getById(@PathVariable Long id) {
         return ResponseEntity.ok(equipementService.getById(id));
     }
 
-    @GetMapping
-    @PreAuthorize("hasAuthority('EQUIPEMENT_READ')")
-    public ResponseEntity<Page<EquipementResponseDTO>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(equipementService.getAll(pageable));
-    }
 
     @GetMapping("/espace/{espaceId}")
-    @PreAuthorize("hasAuthority('EQUIPEMENT_READ')")
     public ResponseEntity<Page<EquipementResponseDTO>> getAllByEspace(
             @PathVariable Long espaceId,
             Pageable pageable) {
         return ResponseEntity.ok(equipementService.getAllByEspaceCoworking(espaceId, pageable));
+    }
+    @GetMapping("/by-user")
+    public ResponseEntity<List<EquipementResponseDTO>> getAllEquipementsByUserId() {
+        try {
+            User currentUser = userService.getCurrentUser();
+            List<EquipementResponseDTO> equipementDTOs = equipementService.getAllEquipementsByUserId(currentUser.getId());
+            return ResponseEntity.ok(equipementDTOs);
+        } catch (ClassCastException e) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+
+            Long userId = userService.getUserIdByUsername(username);
+
+            List<EquipementResponseDTO> equipementDTOs = equipementService.getAllEquipementsByUserId(userId);
+            return ResponseEntity.ok(equipementDTOs);
+        }
     }
 }
 

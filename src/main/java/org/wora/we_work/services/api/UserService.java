@@ -8,4 +8,6 @@ public interface UserService {
     User getCurrentUser();
 
     Long getUserIdByEmail(String email);
+    Long getUserIdByUsername(String username);
+    void updateVerificationStatus(String username, String status);
 }

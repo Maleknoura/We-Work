@@ -5,19 +5,21 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Type;
 import org.hibernate.annotations.UpdateTimestamp;
 
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "espaces_coworking")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@Entity
+@Table(name = "espaces_coworking")
 public class EspaceCoworking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,15 +29,14 @@ public class EspaceCoworking {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "espaceCoworking", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "espace", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Equipement> equipements = new ArrayList<>();
-
-    @OneToMany(mappedBy = "espaceCoworking", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Avis> avis = new ArrayList<>();
 
     @OneToMany(mappedBy = "espace", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Reservation> reservations = new ArrayList<>();
 
+    @OneToMany(mappedBy = "espaceCoworking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Avis> avis = new ArrayList<>();
 
     @Column(nullable = false)
     private String nom;
@@ -52,6 +53,11 @@ public class EspaceCoworking {
     @Column(nullable = false)
     private Integer capacite;
 
+    @ElementCollection
+    @CollectionTable(name = "espace_images", joinColumns = @JoinColumn(name = "espace_id"))
+    @Column(name = "image_url")
+    private List<String> images = new ArrayList<>();
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -62,10 +68,11 @@ public class EspaceCoworking {
     private LocalDateTime dateModification;
 
     public BigDecimal getPrixParHeure() {
-        return BigDecimal.valueOf(prixParJour / 24.0);
+        return BigDecimal.valueOf(prixParJour).divide(BigDecimal.valueOf(24), RoundingMode.HALF_UP);
     }
 
     public int getCapaciteMax() {
         return this.capacite;
     }
+
 }

@@ -6,6 +6,7 @@ import com.stripe.param.PaymentIntentConfirmParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.wora.we_work.dto.paiement.PaiementDTO;
@@ -29,6 +30,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class PaiementServiceImpl implements PaiementService {
+    private final static String REQUIRES_CAPTURES = "requires_capture";
+    private final static String REQUIRES_PAYMENT_METHOD = "requires_payment_method";
 
     private final PaiementRepository paiementRepository;
     private final ReservationRepository reservationRepository;
@@ -72,10 +75,10 @@ public class PaiementServiceImpl implements PaiementService {
         log.info("Payment Intent status: {}", paymentIntent.getStatus());
         log.info("Payment Intent ID: {}", paymentIntent.getId());
 
-        List<String> validStatuses = List.of("succeeded", "requires_capture", "processing");
+        List<String> validStatuses = List.of("succeeded", REQUIRES_CAPTURES, "processing");
 
         if (validStatuses.contains(paymentIntent.getStatus())) {
-            if ("requires_capture".equals(paymentIntent.getStatus())) {
+            if (REQUIRES_CAPTURES.equals(paymentIntent.getStatus())) {
                 paymentIntent = paymentIntent.capture();
             }
 
@@ -99,16 +102,18 @@ public class PaiementServiceImpl implements PaiementService {
                 log.error("Error while saving payment: {}", e.getMessage());
                 throw new RuntimeException("Erreur lors de l'enregistrement du paiement: " + e.getMessage());
             }
-        } else if ("requires_payment_method".equals(paymentIntent.getStatus())) {
-            Map<String, Object> confirmParams = new HashMap<>();
-            confirmParams.put("payment_method", "pm_card_visa");
-            confirmParams.put("return_url", "http://localhost:8081/payment/return");
-
-            paymentIntent = paymentIntent.confirm(confirmParams);
-            return confirmerPaiement(paymentIntentId);
         } else {
-            log.warn("Payment not confirmed. Status: {}", paymentIntent.getStatus());
-            throw new RuntimeException("Le paiement n'a pas été confirmé. Statut: " + paymentIntent.getStatus());
+            if (REQUIRES_PAYMENT_METHOD.equals(paymentIntent.getStatus())) {
+                Map<String, Object> confirmParams = new HashMap<>();
+                confirmParams.put("payment_method", "pm_card_visa");
+                confirmParams.put("return_url", "http://localhost:8081/payment/return");
+
+                paymentIntent = paymentIntent.confirm(confirmParams);
+                return confirmerPaiement(paymentIntentId);
+            } else {
+                log.warn("Payment not confirmed. Status: {}", paymentIntent.getStatus());
+                throw new RuntimeException("Le paiement n'a pas été confirmé. Statut: " + paymentIntent.getStatus());
+            }
         }
     }
 

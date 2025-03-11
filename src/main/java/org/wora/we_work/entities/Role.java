@@ -3,15 +3,15 @@ package org.wora.we_work.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.security.Permission;
 import java.util.HashSet;
 import java.util.Set;
 
+@Entity
+@Table(name = "roles")
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity
-@Table(name = "roles")
+@AllArgsConstructor
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +29,7 @@ public class Role {
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private Set<Permissions> permissions = new HashSet<>();
+    private Set<Permission> permissions = new HashSet<>();
 }
+
 

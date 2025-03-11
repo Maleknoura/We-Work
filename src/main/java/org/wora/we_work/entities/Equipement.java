@@ -5,21 +5,33 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "equipements")
-public class Equipement {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    public class Equipement {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "espace_coworking_id", nullable = false)
-    private EspaceCoworking espaceCoworking;
+        @ManyToOne
+        @JoinColumn(name = "espace_id")
+        private EspaceCoworking espace;
 
-    private String nom;
-    private String description;
-    private Integer quantite;
-}
+        @Column(nullable = false)
+        private String nom;
+
+        private String description;
+
+        @Column(nullable = false)
+        private Integer quantite;
+
+        @Column(nullable = false)
+        private BigDecimal prix;
+
+
+    }
+

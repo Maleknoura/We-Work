@@ -97,34 +97,6 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    @Override
-    public void completeClientProfile(ClientProfileDTO profileDTO) {
-        User currentUser = userService.getCurrentUser();
-        if (!hasRole(currentUser, ROLE_CLIENT)) {
-            throw new AccessDeniedException("L'utilisateur n'est pas un client");
-        }
-
-        currentUser.setPhoneNumber(profileDTO.getPhoneNumber());
-        userRepository.save(currentUser);
-    }
-
-    @Override
-    public void completeProprietaireProfile(ProprietaireProfileDTO profileDTO) {
-        User currentUser = userService.getCurrentUser();
-        if (!hasRole(currentUser, ROLE_PROPRIETAIRE)) {
-            throw new AccessDeniedException("L'utilisateur n'est pas un propriétaire");
-        }
-
-        currentUser.setCompanyName(profileDTO.getCompanyName());
-        currentUser.setPhoneNumber(profileDTO.getPhoneNumber());
-        currentUser.setSiretNumber(profileDTO.getSiretNumber());
-
-        if (currentUser.getTotalAmount() == null) {
-            currentUser.setTotalAmount(0.0);
-        }
-
-        userRepository.save(currentUser);
-    }
 
     private LocalDateTime getTokenExpirationDateTime(String token) {
         return tokenProvider.getExpirationDate(token).toInstant()

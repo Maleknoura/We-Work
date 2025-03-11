@@ -1,120 +1,126 @@
 package org.wora.we_work.services.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.wora.we_work.enums.Status;
+import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingResponseDTO;
 import org.wora.we_work.dto.reservation.ReservationRequest;
 import org.wora.we_work.dto.reservation.ReservationResponse;
 import org.wora.we_work.entities.*;
+import org.wora.we_work.exception.ResourceNotFoundException;
 import org.wora.we_work.mapper.ReservationMapper;
 import org.wora.we_work.repository.*;
-import org.wora.we_work.services.api.ReservationService;
+import org.wora.we_work.services.api.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ReservationServiceImpl implements ReservationService {
+
     private final ReservationRepository reservationRepository;
-    private final EspaceCoworkingRepository espaceRepository;
-    private final UserRepository userRepository;
-    private final PaiementRepository paiementRepository;
     private final ReservationMapper reservationMapper;
+    private final EspaceCoworkingService espaceCoworkingService;
+    private final EquipementService equipementService;
+    private final ValidationService validationService;
+    private  final UserService userService;
 
     @Override
-    @Transactional
-    public ReservationResponse creerReservation(ReservationRequest request, Long userId) {
-        if (request.getDateFin().isBefore(request.getDateDebut())) {
-            throw new IllegalArgumentException("La date de fin doit être après la date de début");
-        }
+    public ReservationResponse createReservation(ReservationRequest reservationRequest) {
+        User user = userService.getCurrentUser();
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        EspaceCoworkingResponseDTO espaceDTO = espaceCoworkingService.getById(reservationRequest.espaceId());
+        EspaceCoworking espace = reservationMapper.espaceDtoToEntity(espaceDTO);
 
-        EspaceCoworking espace = espaceRepository.findById(request.getEspaceId())
-                .orElseThrow(() -> new RuntimeException("Espace non trouvé"));
+        validationService.verifySpaceAvailability(espace, reservationRequest.dateDebut(), reservationRequest.dateFin());
 
-        List<Reservation> reservationsExistantes = reservationRepository
-                .findOverlappingReservations(
-                        request.getEspaceId(),
-                        request.getDateDebut(),
-                        request.getDateFin()
-                );
+        equipementService.verifierDisponibiliteEquipements(reservationRequest.equipementIds());
 
-        if (!reservationsExistantes.isEmpty()) {
-            throw new IllegalStateException("L'espace n'est pas disponible pour ces dates");
-        }
-
-        if (request.getNombrePersonnes() > espace.getCapaciteMax()) {
-            throw new IllegalArgumentException("Nombre de personnes supérieur à la capacité maximale");
-        }
-
-        BigDecimal prixTotal = calculerPrixTotal(
-                espace,
-                request.getDateDebut(),
-                request.getDateFin()
-        );
-
-        Reservation reservation = new Reservation();
+        Reservation reservation = reservationMapper.toEntity(reservationRequest);
         reservation.setEspace(espace);
         reservation.setUser(user);
-        reservation.setDateDebut(request.getDateDebut());
-        reservation.setDateFin(request.getDateFin());
-        reservation.setStatut("EN_ATTENTE");
-        reservation.setPrixTotal(prixTotal);
-        reservation.setNombrePersonnes(request.getNombrePersonnes());
 
-        reservation = reservationRepository.save(reservation);
+        final BigDecimal prixTotalEquipements = equipementService.calculerPrixEquipements(reservationRequest.equipementIds(), reservationRequest.nombrePersonnes());
+        final BigDecimal prixBase = espaceCoworkingService.calculerPrixBase(espace, reservationRequest.nombrePersonnes(), reservationRequest.dateDebut().toLocalDate(), reservationRequest.dateFin().toLocalDate());
 
-        Paiement paiement = new Paiement();
-        paiement.setReservation(reservation);
-        paiement.setMontant(prixTotal);
-        paiement.setStatut("EN_ATTENTE");
-        paiement.setDatePaiement(LocalDateTime.now());
-        paiementRepository.save(paiement);
+        reservation.setPrixTotal(prixBase.add(prixTotalEquipements));
 
+        return reservationMapper.toResponse(reservationRepository.save(reservation));
+    }
+
+
+    @Transactional(readOnly = true)
+    @Override
+    public ReservationResponse getReservationById(Long id) {
+        final Reservation reservation = reservationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Réservation non trouvée avec l'ID: " + id));
         return reservationMapper.toResponse(reservation);
     }
 
-    private BigDecimal calculerPrixTotal(
-            EspaceCoworking espace,
-            LocalDateTime debut,
-            LocalDateTime fin
-    ) {
-        long heures = ChronoUnit.HOURS.between(debut, fin);
-        return espace.getPrixParHeure().multiply(BigDecimal.valueOf(heures));
+    @Transactional(readOnly = true)
+    @Override
+    public Page<ReservationResponse> getAllReservations(Pageable pageable) {
+        return reservationRepository.findAll(pageable).map(reservationMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<ReservationResponse> getReservationsByUser(Long userId, Pageable pageable) {
+        return reservationRepository.findByUserId(userId, pageable).map(reservationMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<ReservationResponse> getReservationsByEspace(Long espaceId, Pageable pageable) {
+        return reservationRepository.findByEspaceId(espaceId, pageable).map(reservationMapper::toResponse);
     }
 
     @Override
-    public ReservationResponse getReservation(Long id) {
-        Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
-        return reservationMapper.toResponse(reservation);
-    }
+    public ReservationResponse updateReservation(Long id, ReservationRequest reservationRequest) {
+        final Reservation existingReservation = reservationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Réservation non trouvée avec l'ID: " + id));
 
-    @Override
-    public List<ReservationResponse> getReservationsUtilisateur(Long utilisateurId) {
-        return reservationRepository.findByUserId(utilisateurId).stream()
-                .map(reservationMapper::toResponse)
-                .collect(Collectors.toList());
-    }
+        if (!existingReservation.getEspace().getId().equals(reservationRequest.espaceId())) {
+            final EspaceCoworkingResponseDTO espaceCoworkingDTO = espaceCoworkingService.getById(reservationRequest.espaceId());
+            final EspaceCoworking newEspace = reservationMapper.espaceDtoToEntity(espaceCoworkingDTO);
 
-    @Override
-    @Transactional
-    public void annulerReservation(Long id) {
-        Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Réservation non trouvée"));
-
-        if (reservation.getDateDebut().minusHours(24).isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Impossible d'annuler une réservation moins de 24h avant");
+            validationService.verifySpaceAvailability(newEspace, reservationRequest.dateDebut(), reservationRequest.dateFin());
+            existingReservation.setEspace(newEspace);
+        } else if (!existingReservation.getDateDebut().equals(reservationRequest.dateDebut()) || !existingReservation.getDateFin().equals(reservationRequest.dateFin())) {
+            validationService.verifySpaceAvailability(existingReservation.getEspace(), reservationRequest.dateDebut(), reservationRequest.dateFin());
         }
 
-        paiementRepository.deleteByReservation(reservation);
+        reservationMapper.updateEntityFromDto(reservationRequest, existingReservation);
 
-        reservationRepository.delete(reservation);
+        final BigDecimal prixTotalEquipements = equipementService.calculerPrixEquipements(reservationRequest.equipementIds(), reservationRequest.nombrePersonnes());
+
+        final BigDecimal prixBase = espaceCoworkingService.calculerPrixBase(existingReservation.getEspace(), reservationRequest.nombrePersonnes(), reservationRequest.dateDebut().toLocalDate(), reservationRequest.dateFin().toLocalDate());
+
+        existingReservation.setPrixTotal(prixBase.add(prixTotalEquipements));
+
+        return reservationMapper.toResponse(reservationRepository.save(existingReservation));
+    }
+
+    @Override
+    public ReservationResponse annulerReservation(Long id) {
+        final Reservation reservation = reservationRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Réservation non trouvée avec l'ID: " + id));
+
+        validationService.verifyCancellationPossibility(reservation);
+
+        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime debutReservation = reservation.getDateDebut().toLocalDate().atStartOfDay();
+
+        if (now.plusHours(24).isAfter(debutReservation)) {
+            reservation.setFraisAnnulation(reservation.getPrixTotal().multiply(new BigDecimal("0.5")));
+        }
+
+        reservation.setStatut(Status.ANNULEE);
+        reservation.setDateAnnulation(LocalDateTime.now());
+
+        return reservationMapper.toResponse(reservationRepository.save(reservation));
     }
 }

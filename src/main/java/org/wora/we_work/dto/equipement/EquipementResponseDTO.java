@@ -5,15 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class EquipementResponseDTO {
-    private Long id;
-    private String nom;
-    private String description;
-    private Integer quantite;
-    private Long espaceCoworkingId;
-    private String espaceCoworkingNom;
-}
+import java.math.BigDecimal;
+
+public record EquipementResponseDTO(
+        Long id,
+        Long espaceId,
+        String espaceNom,
+        String nom,
+        String description,
+        BigDecimal prix,
+        Integer quantite,
+        boolean disponible
+) {}

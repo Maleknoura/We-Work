@@ -25,7 +25,7 @@ public class Avis {
     @JoinColumn(name = "espace_coworking_id", nullable = false)
     private EspaceCoworking espaceCoworking;
 
-    private Integer note;
-    private String commentaire;
+    private Integer stars;
+    private String comment;
     private LocalDateTime dateAvis;
 }

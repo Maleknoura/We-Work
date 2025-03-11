@@ -30,22 +30,5 @@ public class AuthController {
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         return ResponseEntity.ok(authService.login(request));
     }
-    @GetMapping("/debug")
-    public ResponseEntity<?> debug(Authentication authentication) {
-        return ResponseEntity.ok(authentication.getAuthorities());
-    }
 
-    @PostMapping("/complete-profile/client")
-    @PreAuthorize("hasRole('CLIENT')")
-    public ResponseEntity<Void> completeClientProfile(@Valid @RequestBody ClientProfileDTO profileDTO) {
-        authService.completeClientProfile(profileDTO);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/complete-profile/proprietaire")
-    @PreAuthorize("hasRole('PROPRIETAIRE')")
-    public ResponseEntity<Void> completeProprietaireProfile(@Valid @RequestBody ProprietaireProfileDTO profileDTO) {
-        authService.completeProprietaireProfile(profileDTO);
-        return ResponseEntity.ok().build();
-    }
 }

@@ -8,14 +8,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "users")
 @Getter
 @Setter
+@Table(name = "users")
 @NoArgsConstructor
-@Inheritance(strategy = InheritanceType.JOINED)
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +39,8 @@ public class User implements UserDetails {
     private String companyName;
     private String siretNumber;
     private Double totalAmount;
-
+    @Column
+    private String verificationStatus;
     @Column(name = "updated_at")
     protected LocalDateTime updatedAt;
 
@@ -78,7 +77,7 @@ public class User implements UserDetails {
 
         for (Role role : roles) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
-            for (Permissions permission : role.getPermissions()) {
+            for (Permission permission : role.getPermissions()) {
                 authorities.add(new SimpleGrantedAuthority(permission.getName()));
             }
         }
@@ -119,4 +118,6 @@ public class User implements UserDetails {
         return roles.stream()
                 .anyMatch(role -> role.getName().equals(roleName));
     }
+
+
 }
