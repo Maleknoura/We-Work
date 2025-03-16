@@ -10,6 +10,8 @@ import org.wora.we_work.dto.reservation.ReservationRequest;
 import org.wora.we_work.dto.reservation.ReservationResponse;
 import org.wora.we_work.services.api.ReservationService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/booking")
 @AllArgsConstructor
@@ -26,6 +28,16 @@ public class ReservationController {
     public ResponseEntity<Page<ReservationResponse>> getAllReservations(Pageable pageable) {
         Page<ReservationResponse> reservations = reservationService.getAllReservations(pageable);
         return ResponseEntity.ok(reservations);
+    }
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<ReservationResponse>> getUserReservations(@PathVariable Long userId) {
+        List<ReservationResponse> reservationResponses = reservationService.getReservationsForUser(userId);
+
+        if (reservationResponses.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(reservationResponses);
     }
 }
 

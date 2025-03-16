@@ -17,6 +17,9 @@ import org.wora.we_work.services.api.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -123,4 +126,14 @@ public class ReservationServiceImpl implements ReservationService {
 
         return reservationMapper.toResponse(reservationRepository.save(reservation));
     }
+    @Override
+    public List<ReservationResponse> getReservationsForUser(Long userId) {
+        List<Reservation> reservations = reservationRepository.findByEspaceCoworkingUserId(userId);
+
+        return reservations.stream()
+                .map(reservationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+
 }

@@ -14,8 +14,8 @@ import java.util.List;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
     Page<Reservation> findByUserId(Long userId, Pageable pageable);
-    Page<Reservation> findByEspaceId(Long espaceId, Pageable pageable);
 
+    Page<Reservation> findByEspaceId(Long espaceId, Pageable pageable);
 
 
     @Query("SELECT r FROM Reservation r WHERE r.espace.id = :espaceId " +
@@ -28,4 +28,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("dateFin") LocalDateTime dateFin
     );
 
-}
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.espace.user.id = :userId")
+    Long countByUserId(Long userId);
+
+    @Query("SELECT r FROM Reservation r JOIN r.espace e WHERE e.user.id = :userId")
+    List<Reservation> findByEspaceCoworkingUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(r) FROM Reservation r JOIN r.espace e WHERE e.user.id = :ownerId AND YEAR(r.dateDebut) = :year AND MONTH(r.dateDebut) = :month")
+    int countByOwnerIdAndYearAndMonth(@Param("ownerId") Long ownerId, @Param("year") int year, @Param("month") int month);}

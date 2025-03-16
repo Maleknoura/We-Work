@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingSearchCriteria;
 import org.wora.we_work.entities.EspaceCoworking;
 
@@ -20,6 +21,7 @@ public interface EspaceCoworkingRepository extends JpaRepository<EspaceCoworking
     Page<EspaceCoworking> findByUserIdAndActiveTrue(Long proprietaireId, Pageable pageable);
 
     Page<EspaceCoworking> findByUserId(Long userId, Pageable pageable);
-
+    @Query("SELECT COUNT(e) FROM EspaceCoworking e WHERE e.user.id = :userId")
+    Long countByUserId(Long userId);
 
 }

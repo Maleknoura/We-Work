@@ -53,6 +53,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,"/api/avis/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/espaces-search/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/paiements/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**").permitAll()
+
+                        .requestMatchers(HttpMethod.POST, "/api/paiements/**").permitAll()
+
                         .requestMatchers(HttpMethod.PUT, "/api/espaces/**").hasAuthority("ESPACE_UPDATE")
                         .requestMatchers(HttpMethod.POST, "/api/espaces/**").hasAuthority("ESPACE_CREATE")
                         .requestMatchers(HttpMethod.DELETE, "/api/espaces/**").hasAuthority("ESPACE_DELETE")

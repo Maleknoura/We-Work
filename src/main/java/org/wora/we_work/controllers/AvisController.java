@@ -13,7 +13,6 @@ import java.util.List;
 public class AvisController {
 
     private final AvisService avisService;
-
     public AvisController(AvisService avisService) {
         this.avisService = avisService;
     }

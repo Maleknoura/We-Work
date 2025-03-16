@@ -11,4 +11,6 @@ public interface AvisRepository extends JpaRepository<Avis,Long> {
 
     @Query("SELECT AVG(a.stars) FROM Avis a WHERE a.espaceCoworking.id = :coworkingSpaceId")
     Double getAverageRatingByCoworkingSpaceId(Long coworkingSpaceId);
+    @Query("SELECT COUNT(a) FROM Avis a WHERE a.espaceCoworking.user.id = :userId")
+    Long countByUserId(Long userId);
 }

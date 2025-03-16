@@ -25,6 +25,7 @@ public interface ReservationMapper {
     @Mapping(source = "prixTotal", target = "prixTotal")
     @Mapping(source = "statut", target = "statut")
     @Mapping(source = "nombrePersonnes", target = "nombrePersonnes")
+    @Mapping(source = "espace.id",target = "espaceId")
     ReservationResponse toResponse(Reservation reservation);
 
     @Mapping(target = "id", ignore = true)

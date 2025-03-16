@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.wora.we_work.dto.reservation.ReservationRequest;
 import org.wora.we_work.dto.reservation.ReservationResponse;
 
+import java.util.List;
+
 
 public interface ReservationService {
     ReservationResponse createReservation(ReservationRequest reservationRequest);
@@ -20,6 +22,7 @@ public interface ReservationService {
     ReservationResponse updateReservation(Long id, ReservationRequest reservationRequest);
 
     ReservationResponse annulerReservation(Long id);
+    List<ReservationResponse> getReservationsForUser(Long userId);
 }
 
 

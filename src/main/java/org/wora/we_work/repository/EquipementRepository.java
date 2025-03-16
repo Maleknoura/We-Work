@@ -17,5 +17,7 @@ public interface EquipementRepository extends JpaRepository<Equipement, Long> {
     List<Equipement> findByEspace(EspaceCoworking espace);
     @Query("SELECT e FROM Equipement e JOIN e.espace esp WHERE esp.user.id = :userId")
     List<Equipement> findAllEquipementsByUserId(@Param("userId") Long userId);
+    @Query("SELECT COUNT(e) FROM Equipement e WHERE e.espace.user.id = :userId")
+    Long countByUserId(Long userId);
 }
 

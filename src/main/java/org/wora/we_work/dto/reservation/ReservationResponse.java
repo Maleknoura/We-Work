@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 
 
 public record ReservationResponse(
+        Long id ,
         String userName,
         String espaceNom,
+        Long espaceId,
         LocalDateTime dateDebut,
         LocalDateTime dateFin,
         BigDecimal prixTotal,

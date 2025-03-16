@@ -17,30 +17,27 @@ import java.util.*;
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    protected Long id;
+    private Long id;
 
     @Column(unique = true, nullable = false)
-    protected String username;
+    private String username;
 
     @Column(nullable = false)
-    protected String password;
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private String password;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<EspaceCoworking> espaces = new ArrayList<>();
 
+
     @Column(unique = true, nullable = false)
-    protected String email;
+    private String email;
 
     @Column(nullable = false)
-    protected boolean enabled = true;
+    private boolean enabled = true;
 
     @Column(name = "created_at", updatable = false)
-    protected LocalDateTime createdAt;
+    private LocalDateTime createdAt;
     private String phoneNumber;
-    private String companyName;
-    private String siretNumber;
-    private Double totalAmount;
-    @Column
-    private String verificationStatus;
+
     @Column(name = "updated_at")
     protected LocalDateTime updatedAt;
 

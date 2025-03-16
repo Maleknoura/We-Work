@@ -58,7 +58,21 @@ public class EspaceCoworkingController {
     @PreAuthorize("hasAuthority('ESPACE_UPDATE')")
     public ResponseEntity<EspaceCoworkingResponseDTO> update(
             @PathVariable Long id,
-            @Valid @RequestBody EspaceCoworkingRequestDTO requestDTO) {
+            @RequestPart("espace") @Valid EspaceCoworkingRequestDTO requestDTO,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+
+        if (files != null && !files.isEmpty()) {
+            List<String> imageUrls = cloudinaryService.uploadMultipleFiles(files);
+            requestDTO = new EspaceCoworkingRequestDTO(
+                    requestDTO.nom(),
+                    requestDTO.adresse(),
+                    requestDTO.description(),
+                    requestDTO.prixParJour(),
+                    requestDTO.capacite(),
+                    imageUrls
+            );
+        }
+
         return ResponseEntity.ok(espaceCoworkingService.update(id, requestDTO));
     }
 
