@@ -10,20 +10,13 @@ import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record ReservationRequest(
-        @NotNull(message = "L'identifiant de l'espace est obligatoire") Long espaceId,
+public record ReservationRequest(@NotNull(message = "L'identifiant de l'espace est obligatoire") Long espaceId,
 
-        @NotNull(message = "La date de début est obligatoire")
-        @Future(message = "La date de début doit être dans le futur")
-        LocalDateTime dateDebut,
+                                 @NotNull(message = "La date de début est obligatoire") @Future(message = "La date de début doit être dans le futur") LocalDateTime dateDebut,
 
-        @NotNull(message = "La date de fin est obligatoire")
-        @Future(message = "La date de fin doit être dans le futur")
-        LocalDateTime dateFin,
+                                 @NotNull(message = "La date de fin est obligatoire") @Future(message = "La date de fin doit être dans le futur") LocalDateTime dateFin,
 
-        @NotEmpty(message = "La liste des équipements ne peut pas être vide")
-        List<Long> equipementIds,
+                                 List<Long> equipementIds,
 
-        @Min(value = 1, message = "Le nombre de personnes doit être supérieur à 0")
-        int nombrePersonnes
-) {}
+                                 @Min(value = 1, message = "Le nombre de personnes doit être supérieur à 0") int nombrePersonnes) {
+}

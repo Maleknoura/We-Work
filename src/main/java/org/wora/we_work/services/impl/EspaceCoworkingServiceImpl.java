@@ -29,7 +29,6 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
 public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
 
     private final EspaceCoworkingRepository espaceCoworkingRepository;
@@ -53,8 +52,7 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
     @Transactional
     @Override
     public EspaceCoworkingResponseDTO update(Long id, EspaceCoworkingRequestDTO requestDTO) {
-        EspaceCoworking existingEspace = espaceCoworkingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Espace non trouvé"));
+        EspaceCoworking existingEspace = espaceCoworkingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Espace non trouvé"));
 
         espaceCoworkingMapper.updateEntityFromDTO(requestDTO, existingEspace);
 
@@ -63,8 +61,7 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
 
     @Override
     public void delete(Long id) {
-        EspaceCoworking espace = espaceCoworkingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
+        EspaceCoworking espace = espaceCoworkingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
 
         espaceCoworkingRepository.delete(espace);
     }
@@ -72,29 +69,26 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
     @Override
     @Transactional(readOnly = true)
     public Page<EspaceCoworkingResponseDTO> getAll(Pageable pageable) {
-        return espaceCoworkingRepository.findAll(pageable)
-                .map(espaceCoworkingMapper::toResponseDTO);
+        return espaceCoworkingRepository.findAll(pageable).map(espaceCoworkingMapper::toResponseDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
     public EspaceCoworkingResponseDTO getById(Long id) {
-        EspaceCoworking espace = espaceCoworkingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
+        EspaceCoworking espace = espaceCoworkingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Espace coworking non trouvé avec l'id: " + id));
         return espaceCoworkingMapper.toResponseDTO(espace);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EspaceCoworkingResponseDTO> getAllByProprietaire(Long proprietaireId, Pageable pageable) {
-        return espaceCoworkingRepository.findByUserId(proprietaireId, pageable)
-                .map(espaceCoworkingMapper::toResponseDTO);
+        return espaceCoworkingRepository.findByUserId(proprietaireId, pageable).map(espaceCoworkingMapper::toResponseDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<EspaceCoworkingResponseDTO> searchEspaceCoworkings(EspaceCoworkingSearchCriteria criteria) {
-       Specification<EspaceCoworking> spec = Specification.where(null);
+        Specification<EspaceCoworking> spec = Specification.where(null);
 
         if (criteria.getPrixParJour() != null) {
             BigDecimal prix = BigDecimal.valueOf(criteria.getPrixParJour());
@@ -124,8 +118,10 @@ public class EspaceCoworkingServiceImpl implements EspaceCoworkingService {
     public BigDecimal calculerPrixBase(EspaceCoworking espace, int nombrePersonnes, LocalDate dateDebut, LocalDate dateFin) {
         final long nombreJours = ChronoUnit.DAYS.between(dateDebut, dateFin) + 1;
 
-        return BigDecimal.valueOf(espace.getPrixParJour())
-                .multiply(BigDecimal.valueOf(nombrePersonnes))
-                .multiply(BigDecimal.valueOf(nombreJours));
+        return BigDecimal.valueOf(espace.getPrixParJour()).multiply(BigDecimal.valueOf(nombrePersonnes)).multiply(BigDecimal.valueOf(nombreJours));
+    }
+
+    public EspaceCoworking findById(Long id) {
+        return espaceCoworkingRepository.findById(id).orElseThrow(() -> new RuntimeException("espace non trouvé"));
     }
 }

@@ -1,4 +1,4 @@
-package org.wora.we_work.dto;
+package org.wora.we_work.dto.user;
 
 import lombok.Data;
 

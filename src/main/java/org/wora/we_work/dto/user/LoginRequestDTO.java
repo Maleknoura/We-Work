@@ -1,4 +1,4 @@
-package org.wora.we_work.dto;
+package org.wora.we_work.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

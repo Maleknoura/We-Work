@@ -1,7 +1,7 @@
 package org.wora.we_work.mapper;
 
 import org.mapstruct.Mapper;
-import org.wora.we_work.dto.UserDTO;
+import org.wora.we_work.dto.user.UserDTO;
 import org.wora.we_work.entities.User;
 
 @Mapper(componentModel = "spring")

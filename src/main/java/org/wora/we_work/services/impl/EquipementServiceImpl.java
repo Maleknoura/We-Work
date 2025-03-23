@@ -43,11 +43,9 @@ public class EquipementServiceImpl implements EquipementService {
     }
 
 
-
     @Override
     public EquipementResponseDTO update(Long id, EquipementRequestDTO requestDTO) {
-        Equipement equipement = equipementRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Équipement non trouvé"));
+        Equipement equipement = equipementRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Équipement non trouvé"));
 
         equipementMapper.updateEntityFromDto(requestDTO, equipement);
 
@@ -57,8 +55,7 @@ public class EquipementServiceImpl implements EquipementService {
 
     @Override
     public void delete(Long id) {
-        Equipement equipement = equipementRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Équipement non trouvé"));
+        Equipement equipement = equipementRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Équipement non trouvé"));
 
         equipementRepository.delete(equipement);
     }
@@ -66,23 +63,20 @@ public class EquipementServiceImpl implements EquipementService {
     @Override
     @Transactional(readOnly = true)
     public EquipementResponseDTO getById(Long id) {
-        Equipement equipement = equipementRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Équipement non trouvé"));
+        Equipement equipement = equipementRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Équipement non trouvé"));
         return equipementMapper.toDto(equipement);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EquipementResponseDTO> getAll(Pageable pageable) {
-        return equipementRepository.findAll(pageable)
-                .map(equipementMapper::toDto);
+        return equipementRepository.findAll(pageable).map(equipementMapper::toDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EquipementResponseDTO> getAllByEspaceCoworking(Long espaceCoworkingId, Pageable pageable) {
-        return equipementRepository.findByEspaceId(espaceCoworkingId, pageable)
-                .map(equipementMapper::toDto);
+        return equipementRepository.findByEspaceId(espaceCoworkingId, pageable).map(equipementMapper::toDto);
     }
 
     @Override
@@ -104,11 +98,8 @@ public class EquipementServiceImpl implements EquipementService {
             return BigDecimal.ZERO;
         }
 
-        return equipementRepository.findAllById(equipementIds).stream()
-                .map(equipement -> equipement.getPrix().multiply(BigDecimal.valueOf(nombrePersonnes)))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return equipementRepository.findAllById(equipementIds).stream().map(equipement -> equipement.getPrix().multiply(BigDecimal.valueOf(nombrePersonnes))).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-
 
 
     @Override
@@ -130,6 +121,7 @@ public class EquipementServiceImpl implements EquipementService {
             }
         }
     }
+
     @Override
     public List<EquipementResponseDTO> getAllEquipementsByUserId(Long userId) {
         List<Equipement> equipements = equipementRepository.findAllEquipementsByUserId(userId);

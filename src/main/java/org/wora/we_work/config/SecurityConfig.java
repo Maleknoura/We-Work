@@ -39,47 +39,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/auth/register", "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/identity/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"verification-callback").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/identity/**").permitAll()
-                        .requestMatchers(HttpMethod.POST,"/api/avis/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/avis/**").permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/espaces-search/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/paiements/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**").permitAll()
-
-                        .requestMatchers(HttpMethod.POST, "/api/paiements/**").permitAll()
-
-                        .requestMatchers(HttpMethod.PUT, "/api/espaces/**").hasAuthority("ESPACE_UPDATE")
-                        .requestMatchers(HttpMethod.POST, "/api/espaces/**").hasAuthority("ESPACE_CREATE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/espaces/**").hasAuthority("ESPACE_DELETE")
-                        .requestMatchers(HttpMethod.GET, "/api/espaces/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/equipments/**").hasAuthority("EQUIPEMENT_CREATE")
-                                .requestMatchers(HttpMethod.PUT, "/api/equipments/**").hasAuthority("EQUIPEMENT_UPDATE")
-                                .requestMatchers(HttpMethod.DELETE, "/api/equipments/**").hasAuthority("EQUIPEMENT_DELETE")
-                                .requestMatchers(HttpMethod.GET, "/api/equipments/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/booking/**").hasAuthority("RESERVATION_CREATE")
-                        .requestMatchers(HttpMethod.PUT, "/api/booking/**").hasAuthority("RESERVATION_UPDATE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/booking/**").hasAuthority("RESERVATION_DELETE")
-                        .requestMatchers(HttpMethod.GET, "/api/booking/**").hasAuthority("RESERVATION_READ")
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint((request, response, ex) -> {
-                            log.error("Unauthorized error: {}", ex.getMessage());
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
-                        }))
-                .userDetailsService(customUserDetailsService)
-                .addFilterBefore(new JwtTokenFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class);
+        http.csrf(csrf -> csrf.disable()).cors(cors -> cors.configurationSource(corsConfigurationSource())).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(authz -> authz.requestMatchers("/auth/register", "/auth/login").permitAll().requestMatchers(HttpMethod.GET, "/api/identity/**").permitAll().requestMatchers(HttpMethod.GET, "verification-callback").permitAll().requestMatchers(HttpMethod.POST, "/api/identity/**").permitAll().requestMatchers(HttpMethod.GET,"/api/booking").hasAuthority("RESERVATION_READ_ADMIN").requestMatchers(HttpMethod.POST, "/api/avis/**").permitAll().requestMatchers(HttpMethod.GET, "/api/avis/**").permitAll().requestMatchers(HttpMethod.GET, "/api/admin/**").permitAll().requestMatchers("/api/public/**").permitAll().requestMatchers(HttpMethod.GET, "/api/espaces-search/**").permitAll().requestMatchers(HttpMethod.PUT, "/api/espaces/**").hasAuthority("ESPACE_UPDATE").requestMatchers(HttpMethod.POST, "/api/espaces/**").hasAuthority("ESPACE_CREATE").requestMatchers(HttpMethod.DELETE, "/api/espaces/**").hasAuthority("ESPACE_DELETE").requestMatchers(HttpMethod.GET, "/api/espaces/**").permitAll().requestMatchers(HttpMethod.POST, "/api/equipments/**").hasAuthority("EQUIPEMENT_CREATE").requestMatchers(HttpMethod.PUT, "/api/equipments/**").hasAuthority("EQUIPEMENT_UPDATE").requestMatchers(HttpMethod.DELETE, "/api/equipments/**").hasAuthority("EQUIPEMENT_DELETE").requestMatchers(HttpMethod.GET, "/api/equipments/**").permitAll().requestMatchers(HttpMethod.POST, "/api/booking/**").hasAuthority("RESERVATION_CREATE").requestMatchers(HttpMethod.PUT, "/api/booking/**").hasAuthority("RESERVATION_UPDATE").requestMatchers(HttpMethod.DELETE, "/api/booking/**").hasAuthority("RESERVATION_DELETE").requestMatchers(HttpMethod.GET, "/api/booking/**").hasAuthority("RESERVATION_READ").anyRequest().authenticated()).exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, ex) -> {
+            log.error("Unauthorized error: {}", ex.getMessage());
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage());
+        })).addFilterBefore(new JwtTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -106,6 +69,7 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -113,6 +77,4 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
-
-
 }

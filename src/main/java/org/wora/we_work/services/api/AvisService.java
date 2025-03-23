@@ -7,7 +7,9 @@ import java.util.List;
 
 public interface AvisService {
     AvisResponseDto createAvis(AvisRequestDto request);
+
     List<AvisResponseDto> getAvisByCoworkingSpace(Long espaceCoworkingId);
+
     Double getAverageRating(Long espaceCoworkingId);
 }
 

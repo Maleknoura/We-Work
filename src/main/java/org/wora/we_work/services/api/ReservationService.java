@@ -19,10 +19,7 @@ public interface ReservationService {
 
     Page<ReservationResponse> getReservationsByEspace(Long espaceId, Pageable pageable);
 
-    ReservationResponse updateReservation(Long id, ReservationRequest reservationRequest);
-
-    ReservationResponse annulerReservation(Long id);
-    List<ReservationResponse> getReservationsForUser(Long userId);
+    Page<ReservationResponse> getReservationsForUser(Long userId, Pageable pageable);
 }
 
 

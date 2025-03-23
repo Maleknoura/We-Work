@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingRequestDTO;
 import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingResponseDTO;
-import org.wora.we_work.entities.EspaceCoworking;
+import org.wora.we_work.services.api.CloudinaryService;
 import org.wora.we_work.services.api.EspaceCoworkingService;
-import org.wora.we_work.services.impl.CloudinaryService;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -29,22 +29,14 @@ public class EspaceCoworkingController {
     public ResponseEntity<Page<EspaceCoworkingResponseDTO>> getAll(Pageable pageable) {
         return ResponseEntity.ok(espaceCoworkingService.getAll(pageable));
     }
+
     @PostMapping
     @Secured("ESPACE_CREATE")
-    public ResponseEntity<EspaceCoworkingResponseDTO> create(
-            @RequestPart("espace") @Valid EspaceCoworkingRequestDTO requestDTO,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+    public ResponseEntity<EspaceCoworkingResponseDTO> create(@RequestPart("espace") @Valid EspaceCoworkingRequestDTO requestDTO, @RequestPart(value = "files", required = false) List<MultipartFile> files) throws IOException {
 
         if (files != null && !files.isEmpty()) {
             List<String> imageUrls = cloudinaryService.uploadMultipleFiles(files);
-            requestDTO = new EspaceCoworkingRequestDTO(
-                    requestDTO.nom(),
-                    requestDTO.adresse(),
-                    requestDTO.description(),
-                    requestDTO.prixParJour(),
-                    requestDTO.capacite(),
-                    imageUrls
-            );
+            requestDTO = new EspaceCoworkingRequestDTO(requestDTO.nom(), requestDTO.adresse(), requestDTO.description(), requestDTO.prixParJour(), requestDTO.capacite(), imageUrls);
         }
 
         EspaceCoworkingResponseDTO responseDTO = espaceCoworkingService.create(requestDTO);
@@ -52,25 +44,13 @@ public class EspaceCoworkingController {
     }
 
 
-
-
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ESPACE_UPDATE')")
-    public ResponseEntity<EspaceCoworkingResponseDTO> update(
-            @PathVariable Long id,
-            @RequestPart("espace") @Valid EspaceCoworkingRequestDTO requestDTO,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files) {
+    public ResponseEntity<EspaceCoworkingResponseDTO> update(@PathVariable Long id, @RequestPart("espace") @Valid EspaceCoworkingRequestDTO requestDTO, @RequestPart(value = "files", required = false) List<MultipartFile> files) throws IOException {
 
         if (files != null && !files.isEmpty()) {
             List<String> imageUrls = cloudinaryService.uploadMultipleFiles(files);
-            requestDTO = new EspaceCoworkingRequestDTO(
-                    requestDTO.nom(),
-                    requestDTO.adresse(),
-                    requestDTO.description(),
-                    requestDTO.prixParJour(),
-                    requestDTO.capacite(),
-                    imageUrls
-            );
+            requestDTO = new EspaceCoworkingRequestDTO(requestDTO.nom(), requestDTO.adresse(), requestDTO.description(), requestDTO.prixParJour(), requestDTO.capacite(), imageUrls);
         }
 
         return ResponseEntity.ok(espaceCoworkingService.update(id, requestDTO));
@@ -90,9 +70,7 @@ public class EspaceCoworkingController {
 
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<EspaceCoworkingResponseDTO>> getAllByUser(
-            @PathVariable Long userId,
-            Pageable pageable) {
+    public ResponseEntity<Page<EspaceCoworkingResponseDTO>> getAllByUser(@PathVariable Long userId, Pageable pageable) {
         return ResponseEntity.ok(espaceCoworkingService.getAllByProprietaire(userId, pageable));
     }
 

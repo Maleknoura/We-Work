@@ -15,14 +15,22 @@ import java.util.List;
 public interface EspaceCoworkingService {
 
     EspaceCoworkingResponseDTO create(EspaceCoworkingRequestDTO requestDTO);
-    EspaceCoworkingResponseDTO update(Long id, EspaceCoworkingRequestDTO requestDTO);
-    void delete(Long id);
-    Page<EspaceCoworkingResponseDTO> getAll(Pageable pageable);
-    EspaceCoworkingResponseDTO getById(Long id);
-    Page<EspaceCoworkingResponseDTO> getAllByProprietaire(Long proprietaireId, Pageable pageable);
-    List<EspaceCoworkingResponseDTO> searchEspaceCoworkings(EspaceCoworkingSearchCriteria criteria);
-    BigDecimal calculerPrixBase(EspaceCoworking espace, int nombrePersonnes, LocalDate dateDebut, LocalDate dateFin);
-}
 
+    EspaceCoworkingResponseDTO update(Long id, EspaceCoworkingRequestDTO requestDTO);
+
+    void delete(Long id);
+
+    Page<EspaceCoworkingResponseDTO> getAll(Pageable pageable);
+
+    EspaceCoworkingResponseDTO getById(Long id);
+
+    Page<EspaceCoworkingResponseDTO> getAllByProprietaire(Long proprietaireId, Pageable pageable);
+
+    List<EspaceCoworkingResponseDTO> searchEspaceCoworkings(EspaceCoworkingSearchCriteria criteria);
+
+    BigDecimal calculerPrixBase(EspaceCoworking espace, int nombrePersonnes, LocalDate dateDebut, LocalDate dateFin);
+
+    EspaceCoworking findById(Long id);
+}
 
 

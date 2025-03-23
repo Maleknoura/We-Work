@@ -31,6 +31,7 @@ public class EquipementController {
     public ResponseEntity<Page<EquipementResponseDTO>> getAll(Pageable pageable) {
         return ResponseEntity.ok(equipementService.getAll(pageable));
     }
+
     @PostMapping
     @PreAuthorize("hasAuthority('EQUIPEMENT_CREATE')")
     public ResponseEntity<EquipementResponseDTO> create(@Valid @RequestBody EquipementRequestDTO requestDTO) {
@@ -39,9 +40,7 @@ public class EquipementController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('EQUIPEMENT_UPDATE')")
-    public ResponseEntity<EquipementResponseDTO> update(
-            @PathVariable Long id,
-            @Valid @RequestBody EquipementRequestDTO requestDTO) {
+    public ResponseEntity<EquipementResponseDTO> update(@PathVariable Long id, @Valid @RequestBody EquipementRequestDTO requestDTO) {
         return ResponseEntity.ok(equipementService.update(id, requestDTO));
     }
 
@@ -59,26 +58,21 @@ public class EquipementController {
 
 
     @GetMapping("/espace/{espaceId}")
-    public ResponseEntity<Page<EquipementResponseDTO>> getAllByEspace(
-            @PathVariable Long espaceId,
-            Pageable pageable) {
+    public ResponseEntity<Page<EquipementResponseDTO>> getAllByEspace(@PathVariable Long espaceId, Pageable pageable) {
         return ResponseEntity.ok(equipementService.getAllByEspaceCoworking(espaceId, pageable));
     }
+
     @GetMapping("/by-user")
     public ResponseEntity<List<EquipementResponseDTO>> getAllEquipementsByUserId() {
-        try {
-            User currentUser = userService.getCurrentUser();
-            List<EquipementResponseDTO> equipementDTOs = equipementService.getAllEquipementsByUserId(currentUser.getId());
-            return ResponseEntity.ok(equipementDTOs);
-        } catch (ClassCastException e) {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = userService.getCurrentUser();
 
-            Long userId = userService.getUserIdByUsername(username);
+        Long userId = (currentUser != null)
+                ? currentUser.getId()
+                : userService.getUserIdByUsername(authentication.getName());
 
-            List<EquipementResponseDTO> equipementDTOs = equipementService.getAllEquipementsByUserId(userId);
-            return ResponseEntity.ok(equipementDTOs);
-        }
+        List<EquipementResponseDTO> equipementDTOs = equipementService.getAllEquipementsByUserId(userId);
+        return ResponseEntity.ok(equipementDTOs);
     }
 }
 

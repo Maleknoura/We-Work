@@ -29,4 +29,5 @@ public interface EquipementService {
 
     void verifierDisponibiliteEquipements(List<Long> equipementIds);
 
-    List<EquipementResponseDTO> getAllEquipementsByUserId(Long userId);}
+    List<EquipementResponseDTO> getAllEquipementsByUserId(Long userId);
+}

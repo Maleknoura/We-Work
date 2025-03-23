@@ -9,8 +9,12 @@ import java.util.List;
 
 public interface PaiementService {
     PaiementIntentDTO creerIntentPaiement(PaiementRequestDTO requestDTO) throws StripeException;
+
     PaiementDTO confirmerPaiement(String paymentIntentId) throws StripeException;
+
     PaiementDTO getPaiement(Long id);
+
     List<PaiementDTO> getPaiementsByReservation(Long reservationId);
+
     PaiementDTO updateStatutPaiement(Long id, String statut);
 }

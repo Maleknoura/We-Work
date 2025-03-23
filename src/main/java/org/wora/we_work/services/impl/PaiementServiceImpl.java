@@ -14,10 +14,12 @@ import org.wora.we_work.dto.paiement.PaiementIntentDTO;
 import org.wora.we_work.dto.paiement.PaiementRequestDTO;
 import org.wora.we_work.entities.Paiement;
 import org.wora.we_work.entities.Reservation;
+import org.wora.we_work.entities.User;
 import org.wora.we_work.mapper.PaiementMapper;
 import org.wora.we_work.repository.PaiementRepository;
 import org.wora.we_work.repository.ReservationRepository;
 import org.wora.we_work.services.api.PaiementService;
+import org.wora.we_work.services.api.UserService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,8 +32,21 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class PaiementServiceImpl implements PaiementService {
-    private final static String REQUIRES_CAPTURES = "requires_capture";
-    private final static String REQUIRES_PAYMENT_METHOD = "requires_payment_method";
+
+    private static final String REQUIRES_CAPTURE = "requires_capture";
+    private static final String REQUIRES_PAYMENT_METHOD = "requires_payment_method";
+    private static final String STATUS_SUCCEEDED = "succeeded";
+    private static final String STATUS_PROCESSING = "processing";
+
+    private static final String CURRENCY = "eur";
+    private static final Map<String, Object> AUTOMATIC_PAYMENT_METHODS = Map.of(
+            "enabled", true,
+            "allow_redirects", "never"
+    );
+    private static final String DESCRIPTION_PREFIX = "Paiement pour réservation #";
+
+    private static final String STATUT_COMPLETE = "COMPLETE";
+    private static final String METHODE_PAIEMENT_CARTE = "CARTE";
 
     private final PaiementRepository paiementRepository;
     private final ReservationRepository reservationRepository;
@@ -40,80 +55,38 @@ public class PaiementServiceImpl implements PaiementService {
     @Override
     @Transactional
     public PaiementIntentDTO creerIntentPaiement(PaiementRequestDTO requestDTO) throws StripeException {
-        Reservation reservation = reservationRepository.findById(requestDTO.getReservationId())
-                .orElseThrow(() -> new RuntimeException("Reservation non trouvée"));
+        Reservation reservation = getReservationById(requestDTO.getReservationId());
+        Long montantEnCentimes = convertirMontantEnCentimes(requestDTO.getMontant());
 
-        Long montantEnCentimes = requestDTO.getMontant().multiply(new BigDecimal("100")).longValue();
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("amount", montantEnCentimes);
-        params.put("currency", "eur");
-        params.put("description", "Paiement pour réservation #" + reservation.getId());
-
-        Map<String, Object> automaticPaymentMethods = new HashMap<>();
-        automaticPaymentMethods.put("enabled", true);
-        automaticPaymentMethods.put("allow_redirects", "never");
-        params.put("automatic_payment_methods", automaticPaymentMethods);
-
+        Map<String, Object> params = creerParametresPaiement(montantEnCentimes, reservation);
         PaymentIntent paymentIntent = PaymentIntent.create(params);
-        log.info("Created PaymentIntent with ID: {} and status: {}", paymentIntent.getId(), paymentIntent.getStatus());
+        log.info("PaymentIntent créé : {}", paymentIntent);
 
-        PaiementIntentDTO intentDTO = new PaiementIntentDTO();
-        intentDTO.setClientSecret(paymentIntent.getClientSecret());
-        intentDTO.setPaymentIntentId(paymentIntent.getId());
-        intentDTO.setMontant(requestDTO.getMontant());
-        intentDTO.setDevise("EUR");
-        intentDTO.setReservationId(requestDTO.getReservationId());
-
-        return intentDTO;
+        return buildPaiementIntentDTO(requestDTO, paymentIntent, reservation);
     }
 
     @Override
     @Transactional
     public PaiementDTO confirmerPaiement(String paymentIntentId) throws StripeException {
         PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
-        log.info("Payment Intent status: {}", paymentIntent.getStatus());
-        log.info("Payment Intent ID: {}", paymentIntent.getId());
+        log.info("Statut du PaymentIntent : {}", paymentIntent.getStatus());
 
-        List<String> validStatuses = List.of("succeeded", REQUIRES_CAPTURES, "processing");
-
-        if (validStatuses.contains(paymentIntent.getStatus())) {
-            if (REQUIRES_CAPTURES.equals(paymentIntent.getStatus())) {
+        if (isStatutValide(paymentIntent.getStatus())) {
+            if (REQUIRES_CAPTURE.equals(paymentIntent.getStatus())) {
                 paymentIntent = paymentIntent.capture();
             }
 
-            try {
-                Paiement paiement = new Paiement();
-                paiement.setMontant(new BigDecimal(paymentIntent.getAmount()).divide(new BigDecimal("100")));
-                paiement.setStatut("COMPLETE");
-                paiement.setMethodePaiement("CARTE");
-                paiement.setDatePaiement(LocalDateTime.now());
+            Paiement paiement = creerPaiement(paymentIntent);
+            Paiement savedPaiement = paiementRepository.save(paiement);
+            log.info("Paiement enregistré avec succès : {}", savedPaiement.getId());
 
-                String description = paymentIntent.getDescription();
-                Long reservationId = Long.parseLong(description.split("#")[1]);
-                Reservation reservation = reservationRepository.findById(reservationId)
-                        .orElseThrow(() -> new RuntimeException("Reservation non trouvée"));
-                paiement.setReservation(reservation);
-
-                Paiement savedPaiement = paiementRepository.save(paiement);
-                log.info("Payment saved successfully with ID: {}", savedPaiement.getId());
-                return paiementMapper.toDTO(savedPaiement);
-            } catch (Exception e) {
-                log.error("Error while saving payment: {}", e.getMessage());
-                throw new RuntimeException("Erreur lors de l'enregistrement du paiement: " + e.getMessage());
-            }
+            return paiementMapper.toDTO(savedPaiement);
+        } else if (REQUIRES_PAYMENT_METHOD.equals(paymentIntent.getStatus())) {
+            paymentIntent = confirmerAvecNouvelleMethode(paymentIntent);
+            return confirmerPaiement(paymentIntentId);
         } else {
-            if (REQUIRES_PAYMENT_METHOD.equals(paymentIntent.getStatus())) {
-                Map<String, Object> confirmParams = new HashMap<>();
-                confirmParams.put("payment_method", "pm_card_visa");
-                confirmParams.put("return_url", "http://localhost:8081/payment/return");
-
-                paymentIntent = paymentIntent.confirm(confirmParams);
-                return confirmerPaiement(paymentIntentId);
-            } else {
-                log.warn("Payment not confirmed. Status: {}", paymentIntent.getStatus());
-                throw new RuntimeException("Le paiement n'a pas été confirmé. Statut: " + paymentIntent.getStatus());
-            }
+            log.warn("Paiement non confirmé. Statut : {}", paymentIntent.getStatus());
+            throw new RuntimeException("Le paiement n'a pas été confirmé. Statut : " + paymentIntent.getStatus());
         }
     }
 
@@ -139,5 +112,63 @@ public class PaiementServiceImpl implements PaiementService {
                 .orElseThrow(() -> new RuntimeException("Paiement non trouvé"));
         paiement.setStatut(statut);
         return paiementMapper.toDTO(paiementRepository.save(paiement));
+    }
+
+
+    private Reservation getReservationById(Long reservationId) {
+        return reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation non trouvée"));
+    }
+
+    private Long convertirMontantEnCentimes(BigDecimal montant) {
+        return montant.multiply(new BigDecimal("100")).longValue();
+    }
+
+    private Map<String, Object> creerParametresPaiement(Long montantEnCentimes, Reservation reservation) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("amount", montantEnCentimes);
+        params.put("currency", CURRENCY);
+        params.put("description", DESCRIPTION_PREFIX + reservation.getId());
+        params.put("automatic_payment_methods", AUTOMATIC_PAYMENT_METHODS);
+        return params;
+    }
+
+    private PaiementIntentDTO buildPaiementIntentDTO(PaiementRequestDTO requestDTO, PaymentIntent paymentIntent, Reservation reservation) {
+        return PaiementIntentDTO.builder()
+                .clientSecret(paymentIntent.getClientSecret())
+                .paymentIntentId(paymentIntent.getId())
+                .montant(requestDTO.getMontant())
+                .devise("EUR")
+                .reservationId(reservation.getId())
+                .build();
+    }
+
+    private boolean isStatutValide(String statut) {
+        return List.of(STATUS_SUCCEEDED, REQUIRES_CAPTURE, STATUS_PROCESSING).contains(statut);
+    }
+
+    private Paiement creerPaiement(PaymentIntent paymentIntent) {
+        Paiement paiement = new Paiement();
+        paiement.setMontant(new BigDecimal(paymentIntent.getAmount()).divide(new BigDecimal("100")));
+        paiement.setStatut(STATUT_COMPLETE);
+        paiement.setMethodePaiement(METHODE_PAIEMENT_CARTE);
+        paiement.setDatePaiement(LocalDateTime.now());
+
+        Long reservationId = extraireReservationId(paymentIntent.getDescription());
+        Reservation reservation = getReservationById(reservationId);
+        paiement.setReservation(reservation);
+
+        return paiement;
+    }
+
+    private Long extraireReservationId(String description) {
+        return Long.parseLong(description.split("#")[1]);
+    }
+
+    private PaymentIntent confirmerAvecNouvelleMethode(PaymentIntent paymentIntent) throws StripeException {
+        Map<String, Object> confirmParams = new HashMap<>();
+        confirmParams.put("payment_method", "pm_card_visa");
+        confirmParams.put("return_url", "http://localhost:8081/payment/return");
+        return paymentIntent.confirm(confirmParams);
     }
 }

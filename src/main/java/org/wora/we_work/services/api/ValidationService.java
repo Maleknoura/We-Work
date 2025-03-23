@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 
 public interface ValidationService {
     void verifySpaceAvailability(EspaceCoworking space, LocalDateTime startDate, LocalDateTime endDate);
+
     void verifyCancellationPossibility(Reservation reservation);
 }
 

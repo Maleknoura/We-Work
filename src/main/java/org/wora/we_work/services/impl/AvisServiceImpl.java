@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class AvisServiceImpl implements AvisService {
 
-
     private final AvisRepository avisRepository;
     private final AvisMapper avisMapper;
 
@@ -32,10 +31,7 @@ public class AvisServiceImpl implements AvisService {
 
     @Override
     public List<AvisResponseDto> getAvisByCoworkingSpace(Long espaceCoworkingId) {
-        return avisRepository.findByEspaceCoworkingId(espaceCoworkingId)
-                .stream()
-                .map(avisMapper::toDto)
-                .collect(Collectors.toList());
+        return avisRepository.findByEspaceCoworkingId(espaceCoworkingId).stream().map(avisMapper::toDto).collect(Collectors.toList());
     }
 
     @Override

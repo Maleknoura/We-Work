@@ -12,7 +12,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.wora.we_work.dto.*;
+import org.wora.we_work.dto.user.AuthResponseDTO;
+import org.wora.we_work.dto.user.LoginRequestDTO;
+import org.wora.we_work.dto.user.RegisterRequestDTO;
 import org.wora.we_work.entities.Role;
 import org.wora.we_work.entities.User;
 import org.wora.we_work.exception.EmailAlreadyExistsException;
@@ -21,7 +23,6 @@ import org.wora.we_work.repository.RoleRepository;
 import org.wora.we_work.repository.UserRepository;
 import org.wora.we_work.config.JwtTokenProvider;
 import org.wora.we_work.services.api.AuthService;
-import org.wora.we_work.services.api.UserService;
 
 import javax.management.relation.RoleNotFoundException;
 import java.time.LocalDateTime;
@@ -39,7 +40,6 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider tokenProvider;
     private final RoleRepository roleRepository;
     private final AuthenticationManager authenticationManager;
-    private final UserService userService;
 
     private static final String ROLE_CLIENT = "ROLE_CLIENT";
     private static final String ROLE_PROPRIETAIRE = "ROLE_PROPRIETAIRE";
@@ -65,10 +65,6 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RoleNotFoundException("Rôle non trouvé: " + roleType));
         user.getRoles().add(role);
 
-        if (ROLE_PROPRIETAIRE.equals(roleType)) {
-            user.setTotalAmount(0.0);
-        }
-
         user = userRepository.save(user);
 
         String token = tokenProvider.createToken(user.getEmail());
@@ -79,24 +75,23 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO request) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            User user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
 
-            String token = tokenProvider.createToken(user.getEmail());
-            LocalDateTime expirationDateTime = getTokenExpirationDateTime(token);
-
-            return createAuthResponse(token, user, expirationDateTime);
-        } catch (AuthenticationException e) {
-            throw new BadCredentialsException("Email ou mot de passe incorrect");
+        if (!user.isEnabled()) {
+            throw new AccessDeniedException("Vous n'avez pas accès à la plateforme");
         }
-    }
 
+        String token = tokenProvider.createToken(user.getEmail());
+        LocalDateTime expirationDateTime = getTokenExpirationDateTime(token);
+
+        return createAuthResponse(token, user, expirationDateTime);
+    }
 
     private LocalDateTime getTokenExpirationDateTime(String token) {
         return tokenProvider.getExpirationDate(token).toInstant()
@@ -104,24 +99,9 @@ public class AuthServiceImpl implements AuthService {
                 .toLocalDateTime();
     }
 
-    public boolean isProfileComplete(User user) {
-        if (hasRole(user, ROLE_CLIENT)) {
-            return user.getPhoneNumber() != null;
-        } else if (hasRole(user, ROLE_PROPRIETAIRE)) {
-            return user.getCompanyName() != null &&
-                    user.getPhoneNumber() != null &&
-                    user.getSiretNumber() != null;
-        }
-        return false;
-    }
-
-    private boolean hasRole(User user, String roleName) {
-        return user.getRoles().stream()
-                .anyMatch(role -> roleName.equals(role.getName()));
-    }
-
     private AuthResponseDTO createAuthResponse(String token, User user, LocalDateTime expirationDateTime) {
         String userType = determineUserType(user);
+
         Set<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
@@ -143,5 +123,10 @@ public class AuthServiceImpl implements AuthService {
             return "CLIENT";
         }
         return "USER";
+    }
+
+    private boolean hasRole(User user, String roleName) {
+        return user.getRoles().stream()
+                .anyMatch(role -> roleName.equals(role.getName()));
     }
 }

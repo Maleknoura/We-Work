@@ -20,7 +20,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class IdentityVerificationController {
     private StripeIdentityService stripeIdentityService;
-    private UserService userService;
+    private static final String STATUS_VERIFIED = "verified";
+    private static final String STATUS_REQUIRES_INPUT = "requires_input";
 
     @PostMapping("/start-verification")
     public ResponseEntity<Map<String, Object>> startVerification() {
@@ -33,51 +34,41 @@ public class IdentityVerificationController {
         } catch (StripeException e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @GetMapping("/verification-callback")
-    public ResponseEntity<String> handleCallback(
-            @RequestParam(required = false) Boolean success,
-            @RequestParam(required = false) String session_id) {
+    public ResponseEntity<String> handleCallback(@RequestParam(required = false) Boolean success, @RequestParam(required = false) String session_id) {
 
         if (success != null && success) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, "http://localhost:8081/verification-success.html")
-                    .build();
+            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "http://localhost:8081/verification-success.html").build();
         } else {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header(HttpHeaders.LOCATION, "http://localhost:8081/verification-failed.html")
-                    .build();
+            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "http://localhost:8081/verification-failed.html").build();
         }
     }
 
     @GetMapping("/verification-status/{sessionId}")
-    public ResponseEntity<Map<String, String>> checkVerificationStatus(
-            @PathVariable String sessionId) {
-        try {
-            VerificationSession session = stripeIdentityService.retrieveVerificationSession(sessionId);
-            Map<String, String> response = new HashMap<>();
-            response.put("status", session.getStatus());
-            response.put("session_id", sessionId);
+    public ResponseEntity<Map<String, String>> checkVerificationStatus(@PathVariable String sessionId) throws StripeException {
+        VerificationSession session = stripeIdentityService.retrieveVerificationSession(sessionId);
+        Map<String, String> response = creerReponseVerification(sessionId, session.getStatus());
+        return ResponseEntity.ok(response);
+    }
 
-            if ("verified".equals(session.getStatus())) {
-                response.put("message", "Verification completed successfully");
-            } else if ("requires_input".equals(session.getStatus())) {
-                response.put("message", "Waiting for user to complete verification");
-            } else {
-                response.put("message", "Verification status: " + session.getStatus());
-            }
+    private Map<String, String> creerReponseVerification(String sessionId, String status) {
+        Map<String, String> response = new HashMap<>();
+        response.put("status", status);
+        response.put("session_id", sessionId);
 
-            return ResponseEntity.ok(response);
-        } catch (StripeException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(errorResponse);
+        if (STATUS_VERIFIED.equals(status)) {
+            response.put("message", "Verification completed successfully");
+        } else if (STATUS_REQUIRES_INPUT.equals(status)) {
+            response.put("message", "Waiting for user to complete verification");
+        } else {
+            response.put("message", "Verification status: " + status);
         }
+
+        return response;
     }
 }
 

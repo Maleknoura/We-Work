@@ -13,36 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//package org.wora.we_work.mapper;
-//
-//import org.mapstruct.Mapper;
-//import org.mapstruct.Mapping;
-//import org.mapstruct.MappingTarget;
-//import org.mapstruct.ReportingPolicy;
-//import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingRequestDTO;
-//import org.wora.we_work.dto.espaceCoworking.EspaceCoworkingResponseDTO;
-//import org.wora.we_work.entities.Equipement;
-//import org.wora.we_work.entities.EspaceCoworking;
-//
-//import java.util.Collections;
-//import java.util.List;
-//import java.util.stream.Collectors;
-//
-////@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
-////public interface EspaceCoworkingMapper {
-////    @Mapping(target = "images", source = "images")
-////    @Mapping(target = "equipements", ignore = true)
-////    EspaceCoworkingResponseDTO toResponseDTO(EspaceCoworking espaceCoworking);
-////
-////    @Mapping(target = "images", source = "images")
-////    @Mapping(target = "id", ignore = true)
-////    @Mapping(target = "active", constant = "true")
-////    @Mapping(target = "equipements", ignore = true)
-////    EspaceCoworking toEntity(EspaceCoworkingRequestDTO requestDTO);
-////
-////    List<EspaceCoworkingResponseDTO> toResponseDTOList(List<EspaceCoworking> espaceCoworkings);
-////
-////}
 @Mapper(componentModel = "spring")
 public interface EspaceCoworkingMapper {
     @Mapping(source = "user.id", target = "userId")

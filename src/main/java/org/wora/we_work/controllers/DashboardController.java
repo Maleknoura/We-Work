@@ -2,9 +2,9 @@ package org.wora.we_work.controllers;
 
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
-import org.wora.we_work.dto.Stats;
+import org.wora.we_work.dto.statistiques.Stats;
 import org.wora.we_work.dto.reservation.ReservationChartData;
-import org.wora.we_work.services.impl.DashboardService;
+import org.wora.we_work.services.api.DashboardService;
 
 @RestController
 @RequestMapping("/api/dashboard")

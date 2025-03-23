@@ -23,7 +23,6 @@ public interface ReservationMapper {
     @Mapping(source = "dateDebut", target = "dateDebut")
     @Mapping(source = "dateFin", target = "dateFin")
     @Mapping(source = "prixTotal", target = "prixTotal")
-    @Mapping(source = "statut", target = "statut")
     @Mapping(source = "nombrePersonnes", target = "nombrePersonnes")
     @Mapping(source = "espace.id",target = "espaceId")
     ReservationResponse toResponse(Reservation reservation);
@@ -35,7 +34,6 @@ public interface ReservationMapper {
     @Mapping(source = "dateDebut", target = "dateDebut")
     @Mapping(source = "dateFin", target = "dateFin")
     @Mapping(source = "nombrePersonnes", target = "nombrePersonnes")
-    @Mapping(target = "statut", constant = "EN_ATTENTE")
     Reservation toEntity(ReservationRequest request);
 
     @Mapping(target = "id", ignore = true)
@@ -44,7 +42,6 @@ public interface ReservationMapper {
     @Mapping(target = "paiement", ignore = true)
     @Mapping(target = "fraisAnnulation", ignore = true)
     @Mapping(target = "dateAnnulation", ignore = true)
-    @Mapping(target = "statut", ignore = true)
     @Mapping(target = "user", ignore = true)
     void updateEntityFromDto(ReservationRequest request, @MappingTarget Reservation reservation);
     EspaceCoworking espaceDtoToEntity(EspaceCoworkingResponseDTO dto);

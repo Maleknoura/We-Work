@@ -6,7 +6,7 @@ import org.wora.we_work.entities.Reservation;
 
 import java.util.List;
 
-public interface PaiementRepository extends JpaRepository<Paiement,Long> {
+public interface PaiementRepository extends JpaRepository<Paiement, Long> {
     void deleteByReservation(Reservation reservation);
 
     List<Paiement> findByReservationId(Long reservationId);
